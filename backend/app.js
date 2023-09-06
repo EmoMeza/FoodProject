@@ -38,8 +38,22 @@ function multiplierEdad(objeto,number) {
 
 // Rutas
 app.get('/', (req, res) => {
-    res.send(objeto);
-  });
+    res.send("holi");
+});
+
+app.get('/age', (req, res) => {
+    if(!req.query.name){
+        res.status(400).send('Falta el nombre')
+    }
+    const Name = req.query.name;
+    res.send('buenas')
+        
+});
+
+app.post('/age'), (req,res) => {
+    return
+}
+
 
 
 
@@ -78,7 +92,7 @@ const history = require('connect-history-api-fallback');
 app.use(history());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const puerto = process.env.PORT || 3000;
+const puerto = process.env.PORT || 4040;
 
 app.listen(puerto, function () {
     // console.log('Example app listening on port '+ puerto);
