@@ -126,6 +126,7 @@ app.use(history());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const puerto = process.env.PORT || 4040;
+const puerto = process.env.PORT || 4040;
 
 app.listen(puerto, function () {
     // console.log('Example app listening on port '+ puerto);

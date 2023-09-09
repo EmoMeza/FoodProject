@@ -2,10 +2,13 @@
     <div>
     <div class="header">
       <div class="square" :class="{ active: $route.path === '/' }" @click="$router.push('/')">
-        <h2>Home</h2>
+        <h2>Menu</h2>
       </div>
       <div class="square" :class="{ active: $route.path === '/about' }" @click="$router.push('/about')">
-        <h2>About</h2>
+        <h2>Pedidos</h2>
+      </div>
+      <div class="square" :class="{ active: $route.path === '/entrega' }" @click="$router.push('/entrega')">
+        <h2>Entrega</h2>
       </div>
     </div>
     <div class="content">
