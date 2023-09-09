@@ -38,9 +38,56 @@ function multiplierEdad(objeto,number) {
 
 // Rutas
 app.get('/', (req, res) => {
-    res.send(objeto);
   });
 
+app.get('/age', async (req, res) => {
+    if (!req.query.nombre) {
+        res.status(400).send('Falta el nombre');
+        return;
+    }
+    const nombre = req.query.nombre.toUpperCase();
+    try {
+        await client.connect();
+        const database = client.db("test"); //schema
+        const collection = database.collection("persona"); //tabla
+        const result = await collection.findOne({nombre:nombre});
+        console.log(`resultado: ${JSON.stringify(result)}`);
+        if (result){
+            res.send(`La edad de ${nombre} es ${result.edad}`);
+        } else {
+            res.send(`No se ha encontrado a ${nombre}`);
+        }
+    } finally {
+        await client.close();
+    }
+});
+
+//GET recibir algo
+//POST enviar algo
+//PUT actualizar algo
+//DELETE borrar algo
+
+app.post('/age', async (req, res) => {
+    if (!req.query.nombre) {
+        res.status(400).send('Falta el nombre');
+        return;
+    }
+    const nombre = req.query.nombre.toUpperCase();
+    try {
+        await client.connect();
+        const database = client.db("test"); //schema
+        const collection = database.collection("persona"); //tabla
+        const result = await collection.findOne({nombre:nombre});
+        console.log(`resultado: ${JSON.stringify(result)}`);
+        if (result){
+            res.send(`La edad de ${nombre} es ${result.edad}`);
+        } else {
+            res.send(`No se ha encontrado a ${nombre}`);
+        }
+    } finally {
+        await client.close();
+    }
+});
 
 
 app.post('/poto', async (req, res) => {
@@ -78,7 +125,7 @@ const history = require('connect-history-api-fallback');
 app.use(history());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const puerto = process.env.PORT || 3000;
+const puerto = process.env.PORT || 4040;
 
 app.listen(puerto, function () {
     // console.log('Example app listening on port '+ puerto);
