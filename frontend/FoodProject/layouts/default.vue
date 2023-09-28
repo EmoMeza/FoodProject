@@ -4,7 +4,7 @@
       <div class="square" :class="{ active: $route.path === '/' }" @click="$router.push('/')">
         <h2>Menu</h2>
       </div>
-      <div class="square" :class="{ active: $route.path === '/about' }" @click="$router.push('/about')">
+      <div class="square" :class="{ active: $route.path === '/pedidos' }" @click="$router.push('/pedidos')">
         <h2>Pedidos</h2>
       </div>
       <div class="square" :class="{ active: $route.path === '/entrega' }" @click="$router.push('/entrega')">
