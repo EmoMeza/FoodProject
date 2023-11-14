@@ -41,86 +41,98 @@ function multiplierEdad(objeto,number) {
 app.get('/', (req, res) => {
   });
 
-app.get('/age', async (req, res) => {
-    if (!req.query.nombre) {
-        res.status(400).send('Falta el nombre');
-        return;
-    }
-    const nombre = req.query.nombre.toUpperCase();
-    try {
-        await client.connect();
-        const database = client.db("test"); //schema
-        const collection = database.collection("persona"); //tabla
-        const result = await collection.findOne({nombre:nombre});
-        console.log(`resultado: ${JSON.stringify(result)}`);
-        if (result){
-            res.send(`La edad de ${nombre} es ${result.edad}`);
-        } else {
-            res.send(`No se ha encontrado a ${nombre}`);
-        }
-    } finally {
-        await client.close();
-    }
-});
 
 //GET recibir algo
 //POST enviar algo
 //PUT actualizar algo
 //DELETE borrar algo
-
-app.post('/age', async (req, res) => {
-    if (!req.query.nombre) {
-        res.status(400).send('Falta el nombre');
-        return;
-    }
-    const nombre = req.query.nombre.toUpperCase();
-    try {
+app.get('/get/all/comidas', async (req, res) => {
+    try{
+        //connect to the database
         await client.connect();
-        const database = client.db("test"); //schema
-        const collection = database.collection("persona"); //tabla
-        const result = await collection.findOne({nombre:nombre});
-        console.log(`resultado: ${JSON.stringify(result)}`);
-        if (result){
-            res.send(`La edad de ${nombre} es ${result.edad}`);
-        } else {
-            res.send(`No se ha encontrado a ${nombre}`);
+        const database = client.db("foodproject");
+        const collection = database.collection("comidas");
+        //get all comidas inside the collection
+        const result = await collection.find({}).toArray();
+        //send the result back to the client
+        res.json(result);
+    }catch(error){
+        console.log(error);
+        res.json({message: "error"});
+    } finally{
+        await client.close();
+    }
+});
+
+app.post('/add/comida', async (req, res) => {
+    const data = req.body;
+    console.log(data);
+    //set nombre to lowercase
+    const nombre_lowercase= data.nombre.toLowerCase();
+    try {
+        //connect to the database
+        await client.connect();
+        const database = client.db("foodproject");
+        const collection = database.collection("comidas");
+        //check if the name already exists in the database, take in mind that the name in the database is not in lowercase, but the nombre im using to search is
+        const result = await collection.findOne({ nombre: { $regex: new RegExp(`^${nombre_lowercase}$`, 'i') } });
+        //if the name already exists, return an error message
+        if(result){
+            res.json({message: "The name already exists"});
         }
+        else{
+            const insertResult = await collection.insertOne(data);
+            res.json(insertResult);
+        }
+    } catch (error) {
+        console.log(error);
+        res.json({ message: "error" });
     } finally {
         await client.close();
     }
 });
 
-
-app.post('/poto', async (req, res) => {
-    if (!req.body.nombre || !req.body.edad || !req.query.multiplier) {
-        res.status(400).send('Falta el nombre o la edad o el multiplicador');
-        return;
-    }
-    if (req.query.multiplier<=0){
-        res.status(400).send('El multiplicador es menor o igual a 0');
-        return;
-    }
-
-    console.log(JSON.stringify(req.body));
-    const respuesta = multiplierEdad(req.body,req.query.multiplier);
-
-    try {
-        // Connect the client to the server	(optional starting in v4.7)
+app.put('/update/comida', async (req, res) => {
+    const id_comida = req.body.id_comida;
+    const data = req.body;
+    console.log(data);
+    try{
+        //connect to the database
         await client.connect();
-        // Upload respuesta object to MongoDB
-        const database = client.db("test"); //schema
-        const collection = database.collection("persona"); //tabla
-        const result = await collection.insertOne(respuesta);
-        console.log(`resultado: ${JSON.stringify(result)}`);
-    } finally {
-        // Ensures that the client will close when you finish/error
+        const database = client.db("foodproject");
+        const collection = database.collection("comidas");
+        //update the data into the database
+        const result = await collection.updateOne({id_comida: data.id_comida}, {$set: data});
+        //send the result back to the client
+        res.json(result);
+    }catch(error){
+        console.log(error);
+        res.json({message: "error"});
+    }finally{
         await client.close();
     }
-
-
-    res.send(`before it was ${JSON.stringify(req.body)} ${JSON.stringify(respuesta)}!`);
 });
-  
+
+app.delete('/delete/comida', async (req, res) => {
+    const id_comida = req.body.id_comida;
+    console.log(id_comida);
+    try{
+        //connect to the database
+        await client.connect();
+        const database = client.db("foodproject");
+        const collection = database.collection("comidas");
+        //insert the data into the database
+        const result = await collection.deleteOne({id_comida: id_comida});
+        //send the result back to the client
+        res.json(result);
+    }catch(error){
+        console.log(error);
+        res.json({message: "error"});
+    } finally{
+        await client.close();
+    }
+});
+
 // Middleware para Vue.js router modo history
 const history = require('connect-history-api-fallback');
 app.use(history());
