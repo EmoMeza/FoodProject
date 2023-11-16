@@ -133,6 +133,87 @@ app.delete('/delete/comida', async (req, res) => {
     }
 });
 
+//Menu endpoints
+
+app.get('/get/all/menus', async (req, res) =>{
+    try{
+        //connect to the database
+        await client.connect();
+        const database = client.db("foodproject");
+        const collection = database.collection("menus");
+        //get all comidas inside the collection
+        const result = await collection.find({}).toArray();
+        //send the result back to the client
+        res.json(result);
+    }catch(error){
+        console.log(error);
+        res.json({message: "error"});
+    } finally{
+        await client.close();
+    }
+});
+
+app.post('/add/menu', async (req, res) =>{
+    const data = req.body;
+    const guerra = data.guerra.toLowerCase();
+    const top = data.top.toLowerCase();
+
+    const date = new Date();
+    const id_menu = date.getDate() + "-" + date.getMonth() + "-" + date.getFullYear();
+
+    const pedidos = [];
+    data.pedidos = pedidos;
+
+    data.id_menu = id_menu;
+
+    try{
+        //connect to the database
+        await client.connect();
+        const database = client.db("foodproject");
+        const menus = database.collection("menus");
+        const result = await menus.findOne({ id_menu: { $regex: new RegExp(`^${id_menu}$`, 'i') } });
+        //if the name already exists, return an error message
+
+        if(result){
+            res.json({message: "The menu for today already exists"});
+        }
+        else{
+            //check if guerra exists in comidas
+            const comidas = database.collection("comidas");
+            const resultGuerra = await comidas.findOne({ nombre: { $regex: new RegExp(`^${guerra}$`, 'i') } });
+            const resultTop = await comidas.findOne({ nombre: { $regex: new RegExp(`^${top}$`, 'i') } });
+            if(resultGuerra){
+                data.guerra=resultGuerra._id;
+            }else{
+                const comida = {nombre: data.guerra};
+                comida.lista = [];
+                //create guerra in comidas
+                const insertResult = await comidas.insertOne({nombre: comida});
+                data.guerra=insertResult._id;
+            }
+            if(resultTop){
+                data.top=resultTop._id;
+            }else{
+                const comida = {nombre: data.top};
+                comida.lista = [];
+                //create top in comidas
+                const insertResult = await comidas.insertOne({nombre: comida});
+                data.top=insertResult._id;
+            }
+            const insertResult = await comidas.insertOne(data);
+        }
+        //now insert the menu into the database
+        const insertResult = await menus.insertOne(data);
+        //send the result back to the client
+        res.json(insertResult);
+    } catch (error) {
+        console.log(error);
+        res.json({ message: "error" });
+    } finally {
+        await client.close();
+    }
+});
+
 // Middleware para Vue.js router modo history
 const history = require('connect-history-api-fallback');
 app.use(history());
