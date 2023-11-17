@@ -153,7 +153,7 @@ app.get('/get/all/menus', async (req, res) =>{
     }
 });
 
-app.post('/add/menu', async (req, res) =>{
+app.post('/add/menu', async (req, res) => {
     const data = req.body;
     const guerra = data.guerra.toLowerCase();
     const top = data.top.toLowerCase();
@@ -166,46 +166,33 @@ app.post('/add/menu', async (req, res) =>{
 
     data.id_menu = id_menu;
 
-    try{
-        //connect to the database
+    try {
         await client.connect();
         const database = client.db("foodproject");
         const menus = database.collection("menus");
-        const result = await menus.findOne({ id_menu: { $regex: new RegExp(`^${id_menu}$`, 'i') } });
-        //if the name already exists, return an error message
+        const comidas = database.collection("comidas");
 
-        if(result){
-            res.json({message: "The menu for today already exists"});
+        const resultGuerra = await comidas.findOne({ nombre: { $regex: new RegExp(`^${guerra}$`, 'i') } });
+        const resultTop = await comidas.findOne({ nombre: { $regex: new RegExp(`^${top}$`, 'i') } });
+
+        if (!resultGuerra) {
+            const comida = { nombre: data.guerra, lista: [] };
+            const insertResult = await comidas.insertOne(comida);
+            data.guerra = insertResult.insertedId;
+        } else {
+            data.guerra = resultGuerra._id;
         }
-        else{
-            //check if guerra exists in comidas
-            const comidas = database.collection("comidas");
-            const resultGuerra = await comidas.findOne({ nombre: { $regex: new RegExp(`^${guerra}$`, 'i') } });
-            const resultTop = await comidas.findOne({ nombre: { $regex: new RegExp(`^${top}$`, 'i') } });
-            if(resultGuerra){
-                data.guerra=resultGuerra._id;
-            }else{
-                const comida = {nombre: data.guerra};
-                comida.lista = [];
-                //create guerra in comidas
-                const insertResult = await comidas.insertOne({nombre: comida});
-                data.guerra=insertResult._id;
-            }
-            if(resultTop){
-                data.top=resultTop._id;
-            }else{
-                const comida = {nombre: data.top};
-                comida.lista = [];
-                //create top in comidas
-                const insertResult = await comidas.insertOne({nombre: comida});
-                data.top=insertResult._id;
-            }
-            const insertResult = await comidas.insertOne(data);
+
+        if (!resultTop) {
+            const comida = { nombre: data.top, lista: [] };
+            const insertResult = await comidas.insertOne(comida);
+            data.top = insertResult.insertedId;
+        } else {
+            data.top = resultTop._id;
         }
-        //now insert the menu into the database
+
         const insertResult = await menus.insertOne(data);
-        //send the result back to the client
-        res.json(insertResult);
+        res.send(insertResult);
     } catch (error) {
         console.log(error);
         res.json({ message: "error" });
@@ -213,6 +200,98 @@ app.post('/add/menu', async (req, res) =>{
         await client.close();
     }
 });
+
+app.put('/update/menu', async (req, res) => {
+    const data = req.body;
+    const id_menu = data.id_menu;
+
+    const guerra = data.guerra.toLowerCase();
+    const top = data.top.toLowerCase();
+
+    try{
+        //connect to the database
+        await client.connect();
+        const database = client.db("foodproject");
+        const collection = database.collection("menus");
+        const comidas = database.collection("comidas");
+
+        const resultGuerra = await comidas.findOne({ nombre: { $regex: new RegExp(`^${guerra}$`, 'i') } });
+        const resultTop = await comidas.findOne({ nombre: { $regex: new RegExp(`^${top}$`, 'i') } });
+
+        if (!resultGuerra) {
+            const comida = { nombre: data.guerra, lista: [] };
+            const insertResult = await comidas.insertOne(comida);
+            data.guerra = insertResult.insertedId;
+        } else {
+            data.guerra = resultGuerra._id;
+        }
+
+        if (!resultTop) {
+            const comida = { nombre: data.top, lista: [] };
+            const insertResult = await comidas.insertOne(comida);
+            data.top = insertResult.insertedId;
+        } else {
+            data.top = resultTop._id;
+        }
+        //update the data into the database
+        const result = await collection.updateOne({id_menu: id_menu}, {$set: data});
+        //send the result back to the client
+        res.json(result);
+    }catch(error){
+        console.log(error);
+        res.json({message: "error"});
+    }finally{
+        await client.close();
+    }
+});
+
+app.delete('/delete/menu', async (req, res) => {
+    const id_menu = req.body.id_menu;
+    console.log(id_menu);
+    try{
+        //connect to the database
+        await client.connect();
+        const database = client.db("foodproject");
+        const collection = database.collection("menus");
+        //insert the data into the database
+        const result = await collection.deleteOne({id_menu: id_menu});
+        //send the result back to the client
+        res.json(result);
+    }catch(error){
+        console.log(error);
+        res.json({message: "error"});
+    } finally{
+        await client.close();
+    }
+});
+
+app.get('get/today/menu', async (req, res) => {
+    const today = new Date();
+    today = today.getDate() + "-" + today.getMonth() + "-" + today.getFullYear();
+    console.log(today);
+    try{
+        //connect to the database
+        await client.connect();
+        const database = client.db("foodproject");
+        const collection = database.collection("menus");
+        //get all comidas inside the collection
+        const result = await collection.findOne({id_menu: today});
+        //send the result back to the client
+        res.json(result);
+    }catch(error){
+        console.log(error);
+        res.json({message: "error"});
+    }finally{
+        await client.close();
+    }
+});
+
+//Pedidos endpoints
+
+app.get('/get/all/pedidos', async (req, res) =>{
+
+});
+
 
 // Middleware para Vue.js router modo history
 const history = require('connect-history-api-fallback');
